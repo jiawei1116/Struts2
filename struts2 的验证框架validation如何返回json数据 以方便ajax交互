@@ -1,0 +1,114 @@
+http://www.cnblogs.com/lxsky/p/3686067.html
+
+struts2 的验证框架validation简单，好用，但是input只能输出到jsp页面通过struts2的标签<s:fielderror  />才能取出，（EL应该也可以）。
+
+如果使用的是ajax访问，那么就比较悲剧，如何返回json数据以方便ajax交互。
+
+开始想是不是可以直接将input以json方式输出，类似：<result name="input" type="json"></result> ，发现不行，因为type="json"后Result会把整个Action实例转换json字符串后直接作为服务器响应。
+
+方法1:推荐 ，使用struts2提供的拦截器栈jsonValidationWorkflowStack
+
+http://blog.163.com/guomaolin_gavin/blog/static/199618307201212232521748/
+
+关于拦截器截器栈http://hi.baidu.com/wihwtsdkunbnsyr/item/390c735ae811e8968d12edaa
+
+1.这里的action和普通的action一样没有区别。这是因为采用struts2的校验器是不会进过action的（除非校验全通过）
+
+2.配置***-validation.xml   ***表示和要校验的action同一（***和action类名保存一样）
+
+***-validation.xml 配置形式：
+
+复制代码
+<validators>
+    <field name="username">
+        <field-validator type="requiredstring">
+            <message key="user.required"/>
+        </field-validator>
+    </field>
+    <field name="password">
+        <field-validator type="requiredstring">
+            <message key="pass.required"/>
+        </field-validator>
+    </field>
+</validators>
+复制代码
+3.配置struts.xml这里的作用是。将得到的校验信息进行转成json返回给ajax
+
+<package name="XXX" extends="json-default">，以下放到action里面，形式：
+
+            <interceptor-ref name="jsonValidationWorkflowStack"></interceptor-ref>
+            <result name="input" type="json">
+                <param name="ignoreHierarchy">false</param>
+                <param name="includeProperties">fieldErrors\..+$</param>
+            </result>
+输出
+
+{"fieldErrors":{"username":["user.required"],"password":["pass.required"]}}
+4.ajxa进行接收、因为传给ajax的是json。故ajax用json进行接收
+
+var message = data.fieldErrors;
+
+ 
+
+方法2:
+
+这里通过自定义一个result实现，往下看
+
+http://bbs.csdn.net/topics/370186521
+
+1.自己定义一个result
+
+复制代码
+package result;
+ 
+import java.io.PrintWriter;
+import java.util.Map;
+ 
+import org.apache.struts2.ServletActionContext;
+import net.sf.json.JSONObject;
+import com.opensymphony.xwork2.ActionContext;
+import com.opensymphony.xwork2.ActionInvocation;
+import com.opensymphony.xwork2.Result;
+import com.opensymphony.xwork2.util.ValueStack;
+ 
+public class validators_json implements Result {
+ 
+    @SuppressWarnings("unchecked")
+    @Override
+    public void execute(ActionInvocation arg0) throws Exception {
+        //获值栈中fieldErrors的值
+        ValueStack vc = ActionContext.getContext().getValueStack();
+        Map<String, String[]>  ferrors = (Map<String,String[]>)  vc.findValue("fieldErrors");
+        //获得输出流
+        ServletActionContext.getResponse().setCharacterEncoding("utf8");
+        ServletActionContext.getResponse().setContentType("text/html");
+        PrintWriter out = ServletActionContext.getResponse().getWriter();
+        //将map转换为json
+        JSONObject json =JSONObject.fromObject(ferrors);
+        //想客户端输出
+        System.out.println(json.toString());
+        out.print(json.toString());
+        out.close();
+//        for (Map.Entry<String, String[]> entry : ferrors.entrySet())
+//           System.out.println("key:" + entry.getKey() + "  value:" + entry.getValue());
+ 
+    }
+ 
+}
+复制代码
+2.然后修改配置文件struts.xml
+
+添加type的定义,放在<package></package> 之间
+
+<result-types>
+    <result-type name="validators_json" class="result.validators_json" default="true">   </result-type>
+</result-types>
+3.使用
+
+<result name="input" type="validators_json"></result> 
+这样 验证框架所产生的message就可以以json的方式发向客户端了，当然发送方式可以自己定义
+实现了ajax+struts2验证框架异步验证数据。
+
+ 
+
+最近在想，是不是可以不用struts2 的验证框架validation，自己写个validate()方法，将所有的验证消息都直接写道message里面就可以了
