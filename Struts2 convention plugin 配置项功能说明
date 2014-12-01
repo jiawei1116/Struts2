@@ -5,3 +5,5 @@ http://mib168.iteye.com/blog/2009576
 http://blog.csdn.net/baiyang_liu/article/details/7649341
 
 class 命名規則－－》xxxxAction.action
+
+http://localhost:8080/你的工程名/config-browser/actionNames.action
