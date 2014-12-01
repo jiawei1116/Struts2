@@ -1,9 +1,10 @@
-<constant name="struts.convention.default.parent.package" value="convention-default"/>
+1. <constant name="struts.convention.default.parent.package" value="convention-default"/>
 
 http://mib168.iteye.com/blog/2009576
 
 http://blog.csdn.net/baiyang_liu/article/details/7649341
 
-class 命名規則－－》xxxxAction.action
+2. class 命名規則－－》xxxxAction.action
+3. 需放在package名稱為action底下
 
 http://localhost:8080/你的工程名/config-browser/actionNames.action
