@@ -8,3 +8,20 @@ http://blog.csdn.net/baiyang_liu/article/details/7649341
 3. 需放在package名稱為action底下
 
 http://localhost:8080/你的工程名/config-browser/actionNames.action
+
+
+==========常见错误============ 
+1,"There is no Action mapped for namespace /orders and action name view.",这说明URL"/orders/view.action"
+并没有被映射到任何一个action，这是你需要检查action的namespace或者action的名称是否正确。 
+2,如果碰见如“"No result defined for action my.example.actions.orders.ViewAction and result success"的错误，
+说明action被映射到了正确的url上，但是action返回success时要跳转的页面并没有找到，请确保您的工程的正确目录中含有诸如/WEB-INF/content/orders/view-success.jsp的页面。 
+
+============难点============= 
+1,要确保Action的namespace要有对应的页面。定位器(action,actions,struts,strutss)后面的namespace将作为
+action的namespace，并且用来定位该action要跳转到的页面。例如包my.example.actions.orders中有个名为ViewAction的action,
+那么他会被映射到/orders/view.action,该Action对应的页面必须在目录/WEB-INF/content/orders下面，
+例如/WEB-INF/content/orders/view-success.jsp。 
+2,关于Convention Plugin的日志输出。本插件在Debug模式下会输出大量的日志信息，因此不建议开启Debug模式。
+如果你是用的是JDK自带的logger,可以使用"trace"日志级别打印日志；如果使用的是Log4J，可以在配置文件中做如下配置
+
+log4j.logger.org.apache.struts2.convention=DEBUG  
