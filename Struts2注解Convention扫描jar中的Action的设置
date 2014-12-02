@@ -2,3 +2,5 @@ http://blog.csdn.net/gotohailang/article/details/19477015
 
 设置Convention插件需要搜索的jar包
 <constant name="struts.convention.action.includeJars" value=".*?/struts2-action*.*?jar(!/)?" />
+
+http://www.cnblogs.com/yjmyzz/p/4001790.html
