@@ -1,0 +1,161 @@
+http://www.2cto.com/kf/201202/118037.html
+
+如何把登陸頁面中的用戶名傳遞到登錄成功的頁面中呢？
+有三種方式，
+ 
+1，使用預設的action的傳遞方式。
+2，自訂一個vo，在action中使用這個vo
+3，使用ModelDriven的方式。
+下面分別敘述。
+ 
+1，使用預設的action的傳遞方式。
+action文件如下：
+package struts2.login;
+ 
+public class LoginAction {
+   
+    private String username;
+    private String password;
+   
+    public String getUsername() {
+        return username;
+    }
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    public String getPassword() {
+        return password;
+    }
+    public void setPassword(String password) {
+        this.password = password;
+    }
+   
+    public String execute() {
+        System.out.println (LoginAction.class.hashCode());
+        if (username.equalsIgnoreCase("aaa") &&
+                password.equals("aaaaaa")) {
+            return "loginSuc";
+        }
+        else {
+            return "loginFail";
+        }
+    }
+ 
+}
+ 
+ 
+登陸成功的文件如下：
+<%@ page contentType="text/html; charset=gb2312" %>
+<%@ taglib uri="/struts-tags" prefix="s"%>
+<meta http-equiv="content-type" content="text/html;charset=gb2312">
+ 
+ 
+歡迎您，<s:property value="username" /> 登錄成功。
+ 
+2，自訂一個vo，在action中使用這個vo
+自訂vo檔案名：LoginVO.java
+檔內容：
+package struts2.login;
+ 
+public class LoginVO {
+     private String username;
+    private String password;
+   
+    public String getUsername() {
+        return username;
+    }
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    public String getPassword() {
+        return password;
+    }
+    public void setPassword(String password) {
+        this.password = password;
+    }
+   
+}
+ 
+ 
+在Action檔中，要使用這個vo
+檔內容：
+package struts2.login;
+ 
+public class LoginAction {
+     private LoginVO user = null;
+ 
+    public String execute() {
+        System.out.println (LoginAction.class.hashCode());
+        if (user.getUsername().equalsIgnoreCase("aaa") &&
+                user.getPassword().equals("aaaaaa")) {
+            return "loginSuc";
+        }
+        else {
+            return "loginFail";
+        }
+    }
+ 
+     public LoginVO getUser() {
+        return user;
+    }
+ 
+    public void setUser(LoginVO user) {
+        this.user = user;
+    }
+ 
+}
+ 
+登陸成功的文件如下： www.2cto.com
+<%@ page contentType="text/html; charset=gb2312" %>
+<%@ taglib uri="/struts-tags" prefix="s"%>
+<meta http-equiv="content-type" content="text/html;charset=gb2312">
+ 
+ 
+歡迎您，<s:property name="user.username"> 登錄成功。
+ 
+注意login檔的部分也要進行修改
+檔內容如下：
+<meta http-equiv="content-type" content="text/html;charset=gb2312">
+<title>login2</title>
+ 
+<form action="login.action" method="post">
+  username:<input type="input"  name="user.username" ><br>
+  password:<input type="input"  name="user.password" ><br>
+  <input type="submit" value="登錄">
+</form>
+ 
+3，使用ModelDriven的方式。
+同樣也需要一個vo，這個vo和方法2中的一致，但是action中的寫法就不一樣了。
+action檔內容如下：
+package struts2.login;
+ 
+import com.opensymphony.xwork2.ModelDriven;
+ 
+public class LoginAction  implements ModelDriven<LoginVO> {
+     @Override
+    public LoginVO getModel() {
+        // TODO Auto-generated method stub
+        return user;
+    }
+ 
+    private LoginVO user = new LoginVO();
+    public String execute() {
+        System.out.println (LoginAction.class.hashCode());
+        if (user.getUsername().equalsIgnoreCase("aaa") &&
+                user.getPassword().equals("aaaaaa")) {
+            return "loginSuc";
+        }
+        else {
+            return "loginFail";
+        }
+    }
+}
+ 
+而登陸成功的頁面和login的檔則不需要追加user的首碼，即和方法1的檔內容一樣。
+ 
+三種方法的總結:
+第一種方法把form的值都放在action檔中，當form提交的專案很多的時候，action的內容將變得很多，很臃腫。項目少的時候可用。
+ 
+第二種方法將form的值單獨放在vo中，解決了action檔臃腫的問題，同時使form和action分開，較好。但是需要在設置和獲取的jsp頁面上進行標識。
+ 
+第三種方法在第二種方法的基礎上，通過實現特定的介面，去掉了action中的set和get方法，同時去掉了jsp頁面上的標識。使幕後程式的logic更加清晰
