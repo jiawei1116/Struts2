@@ -1,0 +1,57 @@
+http://blog.sina.com.cn/s/blog_5016113a0100rx82.html
+
+struts2 使用攔截器記錄異常日誌
+一個問題
+我們寫的系統在運行過程中會發生一些意想不到的bug，為了跟蹤這些bug，常做的方式是使用try塊，在捕獲異常後把資訊寫入日誌。假如有一個歷史遺留系統，它沒有做異常捕獲日誌，而現在需要加上日誌，怎麼辦呢？
+ 
+AOP
+如果你瞭解AOP，你會知道不必重寫try塊。而struts2的攔截器實現原理就是AOP，strut2中提供了一個異常攔截器ExceptionMappingInterceptor，在發生指定異常後，會由它處理。從它的源碼可以知道，這個類是有寫日誌的功能的，就是默認是禁用了，最快的實現就是直接啟用它的日誌功能。
+ 
+Struts2異常配置
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 2.1//EN" "http://struts.apache.org/dtds/struts-2.1.dtd">
+<struts>
+    <!-- 繼承struts-default以便使用它的攔截器stack——defaultStack -->
+    <package name="youname" extends="struts-default" namespace="/youurl">
+   
+    <!-- 定義一個攔截器stack -->
+    <interceptors>
+           <interceptor-stack name="logException">
+              <interceptor-ref name="defaultStack" />
+              <!-- 覆蓋defultStack中的exception設置，啟用它的日誌功能 -->
+              <interceptor-ref name="exception">
+                  <param name="logEnabled">true</param>
+                  <param name="logLevel">info</param>             
+              </interceptor-ref>
+           </interceptor-stack>
+       </interceptors>
+       <!-- 修改默認的攔截器stack，原來是defaultStack -->
+       <default-interceptor-ref name="logException"/>
+   
+   
+       <!--全域跳轉-->
+       <global-results>
+           <result name="exception" >/500.jsp</result>
+       </global-results>
+ 
+       <!-- 定義要捕獲的異常 -->
+       <global-exception-mappings>
+           <exception-mapping  result="exception" exception="java.lang.Exception" />
+       </global-exception-mappings>
+ 
+    </package>
+</struts>
+       
+       
+日誌配置
+在src中配置log4j.properties文件，略。
+ 
+ 
+個性化日誌輸出
+如果不想使用ExceptionMappingInterceptor中自帶的日誌輸入方式，可以自己實現一個攔截器，然後在上面的<interceptors >元素前定義它，如：
+<interceptor name="exception" class="com.yourInterceptor"/>
+ 
+ 
+優缺點
+這種方式可以記錄沒有處理的異常（包括沒有捕獲處理的運行時異常和已經捕獲處理，但繼續往上層拋出的異常），對於那些被捕獲但不往上層拋出的異常，由於異常攔截器無法捕獲，也就無法寫日誌。
+
