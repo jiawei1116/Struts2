@@ -55,3 +55,71 @@ Struts2異常配置
 優缺點
 這種方式可以記錄沒有處理的異常（包括沒有捕獲處理的運行時異常和已經捕獲處理，但繼續往上層拋出的異常），對於那些被捕獲但不往上層拋出的異常，由於異常攔截器無法捕獲，也就無法寫日誌。
 
+
+@Override
+	public String intercept(ActionInvocation invocation) throws Exception {
+		String result = null;
+		 ActionContext ac = invocation.getInvocationContext();
+		   try{
+		       result = invocation.invoke();
+		   } catch(Exception e) {
+		       ValueStack vs = invocation.getStack();
+		       
+		       Map<String,Object> map = ac.getParameters();
+		       if (e.getMessage() == null) {
+		          vs.setValue("errorMessage", "Internal system faliure.Please contact system administrator.");
+		       } else {
+		          vs.setValue("errorMessage", e.getMessage());
+		       }
+		       vs.setValue("status", "fail");
+		       
+		       BaseAction action = (BaseAction) invocation.getAction();
+		       HttpServletRequest request = action.getRequest();
+		       
+		       action.setPicResponse(new PicResponse());
+		       action.getPicResponse().setResponseType(FrameworkConstant.RtnStatus.FAIL.getValue());
+		       final BaseServiceException baseEx = (BaseServiceException) e;
+		       action.getPicResponse().setResponseMessage(baseEx.getMessageCodeAndCodeInfo(request.getLocale(), action.getCtx()));
+		       		       
+		       result = "exception1";
+		 }
+		 return result;
+	}
+	
+	<package name="json-package" extends="json-default" abstract="true">
+		<interceptors>
+			<interceptor name="exceptionFlowInterceptor" class="exceptionFlowInterceptor"></interceptor>
+			
+			<interceptor-stack name="my-interceptor-stack">
+				<interceptor-ref name="json">
+					<!--<param name="enableSMD">true</param>-->
+				</interceptor-ref>
+				<interceptor-ref name="defaultStack" />
+				<interceptor-ref name="jsonValidationWorkflowStack"></interceptor-ref>
+				
+				<interceptor-ref name="exceptionFlowInterceptor" />
+			</interceptor-stack>
+		</interceptors>
+		<default-interceptor-ref name="my-interceptor-stack"/>
+		
+		<!--全局跳轉-->
+       	<global-results>
+           <!--  <result name="exception" >/500.jsp</result>-->
+           <result name="exception1" type="json">
+				<!--  --><param name="root">picResponse</param>
+			</result>
+       	</global-results>
+ 
+       	<!-- 定義要捕獲的異常 -->
+       	<global-exception-mappings>
+        	<exception-mapping result="exception1" exception="java.lang.Exception" />
+       	</global-exception-mappings>
+		
+	</package>
+	
+	
+	
+	/metadata/framework/application/web/applicationContext-web.xml
+	<bean id="exceptionFlowInterceptor" scope="prototype"
+		class="com.pic.framework.interceptor.ExceptionFlowInterceptor">
+	</bean>
